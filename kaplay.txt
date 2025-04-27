@@ -1,0 +1,1050 @@
+# Kaplay Documentation
+
+This file contains all the documentation for Kaplay, including guides and API documentation.
+
+## Table of Contents
+1. [Getting Started](#getting-started)
+2. [Making Your First Game](#making-your-first-game)
+3. [Concepts](#concepts)
+4. [Advanced Topics](#advanced-topics)
+5. [Integrations](#integrations)
+6. [Expanding Kaplay](#expanding-kaplay)
+7. [Miscellaneous](#miscellaneous)
+8. [API Documentation](#api-documentation)
+
+## Getting Started
+
+### Installation
+
+The most easy way to get started with KAPLAY is to use the
+[CLI tool](https://www.npmjs.com/package/create-kaplay), which will generate a
+project for you:
+
+```sh
+$ npx create-kaplay mygame
+$ cd mygame
+$ npm run dev
+```
+
+This will create your game in the `mygame` folder, and start a development
+server for you to preview your game. If you edit `src/main.js` and refresh the
+page, you will see your changes.
+
+To see all options, run:
+
+```sh
+$ create-kaplay --help
+```
+
+#### Using a CDN
+
+If you prefer to use KAPLAY without any bundlers, you can use a CDN to include
+it directly in your HTML file, or import it with ECMAScript modules.
+
+```html
+<script type="module">
+    // import kaplay
+    import kaplay from "https://unpkg.com/kaplay@3001/dist/kaplay.mjs";
+    // start kaplay
+    kaplay();
+</script>
+```
+
+You can also just include it with a `<script>` tag.
+
+```html
+<script src="https://unpkg.com/kaplay@3001/dist/kaplay.js"></script>
+
+<script>
+    kaplay();
+</script>
+```
+
+#### Setup your own Node.js environment
+
+With Node.js and npm it's easier have some other packages and use version
+control, also it's easier to get typescript autocomplete support, but it
+requires a bit more setup. (This is the way of `create-kaplay`)
+
+```sh
+$ npm install kaplay
+```
+
+You'll need to use a bundler to use Kaboom with NPM. There's a lot of options
+like:
+
+- `esbuild`,
+- `webpack`,
+- `parcel`,
+- `vitejs`,
+
+This is a short example of how to use Kaboom with
+["esbuild"](https://esbuild.github.io/).
+
+Once you have `esbuild` installed, and you have this in a `.js` or `.ts` file:
+
+```js
+import kaplay from "kaplay";
+
+kaplay();
+```
+
+just run
+
+```sh
+$ esbuild game.js --bundle > build.js
+```
+
+and it'll find the KAPLAY package and include it in the built `build.js`,
+include `build.js` in your HTML and you're good to go. Feel free to automate
+this process.
+
+#### Loading Assets
+
+You might have encountered errors when trying to `loadSprite()` from local file
+system, that is because browser won't allow loading local files with JavaScript.
+To get around that you'll need to use a static file that serves the files
+through HTTP. There're a lot of programs that helps you to do that.
+
+- `$ python3 -m http.server` if you have [python3](https://www.python.org)
+  installed
+- `$ python -m SimpleHTTPServer` if you have [python2](https://www.python.org)
+  installed
+- `$ serve` if you have [serve](https://github.com/vercel/serve) installed
+- `$ caddy file-server` if you have [caddy](https://caddyserver.com/) installed
+- `$ static-here` if you have
+  [static-here](https://github.com/amasad/static-here) installed
+- `$ ruby -run -ehttpd . -p8000` if you have
+  [ruby](https://www.ruby-lang.org/en) installed
+- `$ php -S localhost:8000` if you have [php](https://php.net) installed
+
+Let's say you have a folder structure like this:
+
+```sh
+.
+├── sprites
+│   ├── froggy.png
+│   └── cloud.png
+├── sounds
+│   └── horse.mp3
+└── index.html
+```
+
+and you have the static file server running on port `8000`, just go to
+`http://localhost:8000/index.html`, and you should be able to load stuff from
+relative paths like
+
+```js
+loadSprite("froggy", "sprites/froggy.png");
+loadSound("horse", "sounds/horse.mp3");
+```
+
+To learn more check out this
+[MDN doc](https://developer.mozilla.org/en-US/docs/Learn/Common_questions/set_up_a_local_testing_server).
+
+### Basic Concepts
+
+To get started with KAPLAY, you must know 4 main concepts: **Scenes**, **Game
+Objects**, **Components** and **Events**
+
+You can think of your game as a theater: scenes are the acts, game objects are
+the actors and components are the script the actors follow.
+
+## Initialization
+
+All KAPLAY games start with the `kaplay()` function. This function makes
+available all methods and functions that you will use to create your game.
+
+```js
+kaplay();
+```
+
+## Game Objects
+
+Game objects are the entity unit of KAPLAY. They are the actors of your game,
+the entities that move, interact, and make the game interesting.
+
+## Creating Game Objects
+
+We create game objects with the `add()` function. It creates the object and
+attach it to the scene. It receives **components** and **tags**.
+
+```js
+const dinosaur = add([
+    // while components gives different behaviours to the game obj
+    rect(32, 32), // draw a rect
+    pos(80, 80), // set a position
+    // tags classify the game object
+    "dangerous",
+    "big",
+]);
+```
+
+We will see in deep components and tags in their respective guides.
+
+## Parents, childs and root
+
+A game object can have child game objects. This will give to the children the
+possibility of follow parent's position, rotation and scale.
+
+```js
+const player = add([
+    rect(32, 32),
+    pos(80, 80),
+]);
+
+const head = player.add([
+    circle(16),
+    pos(0, -16), // relative to player position
+]);
+```
+
+**Every game object** is a child of the **root game object**. The root game
+object is the game object that contains all the game objects in the scene.
+
+## Game Objects operations
+
+### How to create a game object
+
+```js
+const bag = add([
+    sprite("bag"),
+]);
+```
+
+### How to remove a game object
+
+```js
+// you can use .destroy() method or the destroy() function
+bag.destroy();
+destroy(bag);
+```
+
+### How to get all game objects
+
+```js
+// get a list with all game objects
+get("*");
+// get a list of friends objects
+get("friends");
+```
+
+### How to add a child
+
+```js
+// It adds a mini-bag to bag
+const miniBag = bag.add([
+    sprite("minibag"),
+]);
+
+const superMiniBag = bag.add([
+    sprite("superminibag"),
+    "favorite", // is the favorite
+]);
+```
+
+### How to remove a child
+
+```js
+// We pass the game object reference
+bag.remove(miniBag); // 18, independency
+```
+
+### How to get childs
+
+```js
+bag.get("*"); // all children
+bag.get("favorite"); // [superMiniBag] - all children with tag favorite
+```
+
+You can see the full list of operations in the [`GameObjRaw`](/doc/GameObjRaw)
+documentation.
+
+## The `make()` function
+
+`make()` is used for creating a game object without adding it to the scene.
+
+```js
+// Same syntax as add()
+const bean = make([
+    sprite("bean"),
+    rotate(0),
+]);
+
+// No bean appears, but we can modify it
+bean.angle = 270;
+
+// Now make bean appears!
+add(bean); // ohhi
+```
+
+## Creating game object dynamically
+
+One way for create a game object is create a function that returns a list of
+components:
+
+```js
+function createBullet() {
+    return [
+        rect(6, 18),
+        pos(80, 80),
+        color(0.5, 0.5, 1),
+    ];
+}
+
+const bullet1 = add(createBullet());
+```
+
+Another option is return an object with `make()`, and then add it.
+
+```js
+function createBullet(spr) {
+    const obj = make([
+        pos(80, 80),
+        color(0.5, 0.5, 1),
+    ]);
+
+    // we use a sprite if passed, if not a rect
+    if (spr) {
+        obj.use(sprite(spr));
+    }
+    else {
+        obj.use(rect(6, 18));
+    }
+
+    return obj; // IMPORTANT: return the object reference
+}
+
+const bullet2 = add(createBullet("bullet")); // sprite
+const bullet3 = add(createBullet()); // a rect
+```
+
+## Components
+
+Components are the building blocks of game objects. They define the behavior of
+the object, like how it moves, looks, and interacts with other objects.
+
+In KAPLAY, there are many built-in components that you can use to create your
+game objects. For example:
+
+- `pos(x, y)` sets the position of the object.
+- `rect(width, height)` draws a rectangle.
+- `color(r, g, b)` sets the color of the object.
+
+We will go in deep on components in the [**Components**](/guides/components)
+guide.
+
+## Scenes
+
+Scenes are what wrap the game objects -- the acts of the stageplay. Typical
+scenes might include a main menu, the game itself, and a game over screen.
+
+In KAPLAY, you create scenes with the `scene()` function:
+
+```js
+kaplay(); // remember to initialize the game
+
+scene("game", () => {
+    const rect = add([
+        // a component
+        rect(32, 32),
+    ]);
+});
+```
+
+## Events
+
+An **Event** is something that _happens_ in the game, for example, the player
+pressing a key, clicking the mouse or an enemy being hurt.
+
+An **Event Handler** is a method that listens for events and run code when they
+happen. These functions are named as `on{EventName}`.
+
+```js
+// onKeyPress() will run every time user press any key
+onKeyPress((key) => {
+    // Some events send you args related to them, in this case the key pressed
+    debug.log(key); // will log the key pressed
+});
+```
+
+**Event Handlers** also return an **Event Controller**. It works for cancel the
+event or pause it:
+
+```js
+const pressEvent = onKeyPress((key) => {
+    debug.log(key);
+});
+
+pressEvent.cancel(); // stop running the handler
+```
+
+There's many type of events that runs in different contexts:
+
+#### App events
+
+**App events** run without neccesity of being attached to a game object. They
+are related to things like the game screen, input, etc.
+
+```js
+// Only runs when user press "a"
+onKeyPress("a", () => {
+    debug.log("aaa");
+});
+
+// Only runs when assets finish loading
+onLoad(() => {});
+```
+
+> App events are also in objects
+> There's some events like `onKeyPress()` which also have a `obj.onKeyPress()` version. They are still App events but they got removed when the object is destroyed. See the [App Events list](/#app-events-list) below
+
+#### Root events
+
+**Root events** run during the lifecycle of the **Root Game Object**, or the
+same, forever.
+
+```js
+// onUpdate() event runs every frame.
+onUpdate(() => {
+    // Bean moves 10px to the right every frame
+    bean.moveBy(10, 0);
+});
+
+// onDraw() event runs after update and must be used with drawXXXX functions.
+onDraw(() => {
+    // The sprite is drawn here to prevent it from disappearing after 1 frame.
+    drawSprite("bean");
+});
+```
+
+You can also associate these event handlers with **Tags**, this means you can
+run an event handler code _4 times_ if there's _4 objects_ with that tag. The
+**first argument** is always **the game object** is running for.
+
+```js
+// imagine there's 4 objects with tag "friend"
+
+// onUpdate("friend") will be executed 4 times per frame (or the same, 1 time per object)
+onUpdate("friend", (o) => {
+    // o will take 4 different values
+    debug.log(o.id);
+});
+```
+
+#### Game Object events
+
+**Game Object events** are like Root events, but they operate on individual
+**Game Objects**. These events run during specific points in the object's
+lifecycle, such as when it's added, updated, or removed.
+
+```js
+const obj = add([]);
+
+// Runs when the object is added
+obj.onAdd(() => {});
+// Runs when the object is destroyed
+obj.onDestroy(() => {});
+
+// They run while obj exists
+obj.onUpdate(() => {});
+obj.onDraw(() => {});
+```
+
+Both Object and Root events operate with [Object Events List](#object-events)
+
+## Game Object events given by components
+
+There are events and events handlers that comes from some components. They
+become events of the object after add the comp:
+
+```js
+const kat = add([
+    // health(initialHp) comp gives to the object a health system
+    health(4),
+]);
+
+// Given by health(), runs when we hurt the obj
+kat.onHurt(() => {
+    debug.log("you're a monster!");
+});
+
+// Run when user clicks
+onMousePress(() => {
+    kat.hurt(1); // we remove 1 hp, ouch
+});
+```
+
+## Generic handler
+
+`on()` is a way to create handlers without they being premade. In fact, all
+events handler are an `on()`.
+
+You can use **global** `on()`, it works for use **Game Object events** with
+certain tags. The first argument is always the object. It is useful when there's
+no a handler for tags, for example in the component events:
+
+```js
+// obj.onHurt() but for many objects
+on("hurt", "friend", (o) => {
+    debug.log(o.id);
+});
+
+on("update", "friend", (o) => {
+    debug.log(o.id + "exists");
+});
+```
+
+There's also the object version, `obj.on()`. Useful for listen to an event only
+in that obj:
+
+```js
+kat.on("hurt", () => {
+});
+```
+
+## Custom events
+
+Sometimes you will need create a custom event. For this, we use the `on()` and
+`obj.trigger()` functions.
+
+```js
+// Eat event for all objects with cake tag
+on("eat", "cake", () => {
+    debug.log("The cake is a lie!");
+});
+
+onKeyPress(() => {
+    obj.trigger("eat");
+});
+```
+
+## Events operations
+
+### How to listen for an event
+
+```js
+// a global event
+onUpdate(() => {});
+// an object event
+obj.onUpdate(() => {});
+// a custom event
+obj.on("hi", () => {});
+```
+
+### How to trigger an event
+
+```js
+// will execute obj.on("hi", () => {})
+obj.trigger("hi"); // :>
+```
+
+## List of events
+
+- 🏷️ = Require tags for working
+
+### Object Events List
+
+| Event                    | Comp                               | Description                                   | Global Handler                                    | Object Handler                                                                     |
+| ------------------------ | ---------------------------------- | --------------------------------------------- | ------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `update`                 | None                               | Runs every frame                              | [`onUpdate()`](/doc/ctx/onUpdate)                 | [`obj.onUpdate()`](/doc/GameObjRaw/#GameObjRaw-onUpdate)                           |
+| `draw`                   | None                               | Runs every frame after update                 | [`onDraw()`](/doc/ctx/onDraw])                    | [`obj.onDraw()`](/doc/GameObjRaw/#GameObjRaw-onDraw)                               |
+| `add`                    | None                               | Runs when an object is added as child         | [`onAdd()`](/doc/ctx/onAdd)                       | [`obj.onAdd()`](/doc/GameObjRaw/#GameObjRaw-onAdd)                                 |
+| `destroy`                | None                               | Runs when an object is destroyed              | [`onDestroy()`](/doc/ctx/onDestroy)               | [`obj.onDestroy()`](/doc/GameObjRaw/#GameObjRaw-onDestroy)                         |
+| `use`                    | None                               | Runs when a component is added                | [`onUse()`](/doc/ctx/onUse)                       | [`obj.onUse(comp)`](/doc/GameObjRaw/#GameObjRaw-onUse)                             |
+| `unuse`                  | None                               | Runs when a component is unused               | [`onUnuse()`](/doc/ctx/onUnusue)                  | [`obj.onUnuse(comp)`](/doc/GameObjRaw/#GameObjRaw-onUnuse)                         |
+| `tag`                    | None                               | Runs when a tag is added                      | [`onTag()`](/doc/ctx/onTag)                       | [`obj.onTag(tag)`](/doc/GameObjRaw/#GameObjRaw-onTag)                              |
+| `untag`                  | None                               | Runs when a tag is removed                    | [`onUntag()`](/doc/ctx/onUntag)                   | [`obj.onUntag(tag)`](/doc/GameObjRaw/#GameObjRaw-onUntag)                          |
+| `collide`                | [`area()`](/doc/ctx/area)          | Runs when object collides with another object | [`onCollide()`](/doc/ctx/onCollide) 🏷️             | [`obj.onCollide(other, col)`](/doc/AreaComp/#AreaComp-onCollide)                   |
+| `collideUpdate`          | [`area()`](/doc/ctx/area)          | Runs every frame when objects are colliding   | [`onCollideUpdate()`](/doc/ctx/onCollideUpdate) 🏷️ | [`obj.onCollideUpdate()`](/doc/AreaComp/#AreaComp-onCollideUpdate)                 |
+| `collideEnd`             | [`area()`](/doc/ctx/area)          | Runs when object stops colliding              | [`onCollideEnd()`](/doc/ctx/onCollideEnd) 🏷️       | [`obj.onCollideEnd()`](/doc/AreaComp/#AreaComp-onCollideEnd)                       |
+| `hurt`                   | [`health()`](doc/ctx/health)       | Runs when object is hurt                      | Using `on()`                                      | [`obj.onHurt(damage)`](/doc/HealthComp/#HealthComp-onHurt)                         |
+| `heal`                   | [`health()`](doc/ctx/health)       | Runs when object is healed                    | Using `on()`                                      | [`obj.onHeal(amount)`](/doc/HealthComp/#HealthComp-onHeal)                         |
+| `death`                  | [`health()`](doc/ctx/health)       | Runs when object dies                         | Using `on()`                                      | [`obj.onDeath()`](/doc/HealthComp/#HealthComp-onDeath)                             |
+| `beforePhysicsResolve`   | [`body()`](doc/ctx/body)           | Runs before physics resolves                  | Using `on()`                                      | [`obj.onBeforePhysics(col)`](/doc/BodyComp/#BodyComp-onBeforePhysicsResolve)       |
+| `physicsResolve`         | [`body()`](doc/ctx/body)           | Runs after physics resolves                   | Using `on()`                                      | [`obj.onPhysics(col)`](/doc/BodyComp/#BodyComp-onPhysicsResolve)                   |
+| `ground`                 | [`body()`](doc/ctx/body)           | Runs when object is on the ground             | Using `on()`                                      | [`obj.onGround()`](/doc/BodyComp/#Body-onGround)                                   |
+| `fall`                   | [`body()`](doc/ctx/body)           | Runs when object starts falling               | Using `on()`                                      | [`obj.onFall()`](/doc/Body/#BodyComp-onFall)                                       |
+| `fallOff`                | [`body()`](doc/ctx/body)           | Runs when object stops falling                | Using `on()`                                      | [`obj.onFallOff()`](/doc/BodyComp/#BodyComp-onFallOff)                             |
+| `headbutt`               | [`body()`](doc/ctx/body)           | Runs when object headbutts                    | Using `on()`                                      | [`obj.onHeadbutt()`](/doc/BodyComp/#BodyComp-onHeadbutt)                           |
+| `land`                   | [`body()`](doc/ctx/body)           | Runs when object lands                        | Using `on()`                                      | [`obj.onLand()`](/doc/BodyComp/#BodyComp-onLand)                                   |
+| `headbutted`             | [`body()`](doc/ctx/body)           | Runs when object is headbutted                | Using `on()`                                      | [`obj.onHeadbutted()`](/doc/BodyComp/#BodyComp-onHeadbutted)                       |
+| `doubleJump`             | [`doubleJump`](doc/ctx/doubleJump) | Runs when object double jumps                 | Using `on()`                                      | [`obj.onDoubleJump()`](/doc/DoubleJumpComp/#DoubleJumpComp-onDoubleJump)           |
+| `exitView`               | [`offscreen()`](doc/ctx/offscreen) | Runs when object goes out of view             | Using `on()`                                      | [`obj.onExitView()`](/doc/OffscreenComp/#OffScreenComp-onExitView)                 |
+| `enterView`              | [`offscreen()`](doc/ctx/offscreen) | Runs when object enters view                  | Using `on()`                                      | [`obj.onEnterView()`](/doc/OffscreenComp/#OffScreenComp-onEnterView)               |
+| `animStart`              | [`sprite()`](doc/ctx/sprite)       | Runs when animation starts                    | Using `on()`                                      | [`obj.onAnimStart(anim)`](/doc/SpriteComp/#SpriteComp-onAnimStart)                 |
+| `animEnd`                | [`sprite()`](doc/ctx/sprite)       | Runs when animation ends                      | Using `on()`                                      | [`obj.onAnimEnd(anim)`](/doc/SpriteComp/#SpriteComp-onAnimEnd)                     |
+| `navigationNext`         | [`agent()`](doc/ctx/agent)         | Runs when navigation moves to the next point  | Using `on()`                                      | [`obj.onNavigationNext()`](/doc/AgentComp/#AgentComp-onNavigationNext)             |
+| `navigationEnded`        | [`agent()`](doc/ctx/agent)         | Runs when navigation ends                     | Using `on()`                                      | [`obj.onNavigationEnded()`](/doc/AgentComp/#AgentComp-onNavigationEnded)           |
+| `navigationStarted`      | [`agent()`](doc/ctx/agent)         | Runs when navigation starts                   | Using `on()`                                      | [`obj.onNavigationStarted()`](/doc/AgentComp/#AgentComp-onNavigationStarted)       |
+| `targetReached`          | [`agent()`](doc/ctx/agent)         | Runs when navigation target is reached        | Using `on()`                                      | [`obj.onTargetReached()`](/doc/AgentComp/#AgentComp-onTargetReached)               |
+| `patrolFinished`         | [`patrol()`](doc/ctx/agent)        | Runs when patrol finishes                     | Using `on()`                                      | [`obj.onPatrolFinished()`](/doc/PatrolComp/#PatrolComp-onPatrolFinished)           |
+| `objectSpotted`          | [`sentry()`](doc/ctx/sentry)       | Runs when object spots another                | Using `on()`                                      | [`obj.onObjectSpotted()`](/doc/SentryComp/#SentryComp-onObjectSpotted)             |
+| `animateChannelFinished` | [`animate()`](doc/ctx/animate)     | Runs when animation channel finishes          | Using `on()`                                      | [`obj.onAnimateChannel()`](/doc/AnimateComp/#AnimateComp-onAnimateChannelFinished) |
+| `animateFinished`        | [`animate`](doc/ctx/animate)       | Runs when animation finishes                  | Using `on()`                                      | [`obj.onAnimateFinished()`](/doc/AnimateComp/#AnimateComp-onAnimateFinished)       |
+| `spatialMapChanged`      | [`level()`](doc/ctx/level)         | Runs when spatial map changes                 | Using `on()`                                      | [`obj.onSpatialMapChanged()`](/doc/LevelComp/#LevelComp-onSpatialMapChanged)       |
+| `navigationMapInvalid`   | [`level()`](doc/ctx/level)         | Runs when navigation map becomes invalid      | Using `on()`                                      | [`obj.onNavigationMapInvalid()`](/doc/LevelComp/#LevelComp-onNavigationMapInvalid) |
+| `avigationMapChanged`    | [`level()`](doc/ctx/level)         | Runs when navigation map changes              | Using `on()`                                      | [`obj.onNavigationMapChanged()`](/doc/LevelComp/#LevelComp-onNavigationMapChanged) |
+
+### App Events List
+
+| Event                  | Description                                           | Global Handler                                                | Object Handler                                                                       |
+| ---------------------- | ----------------------------------------------------- | ------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+
+## Components
+
+Components are the building blocks of game objects. They define the behavior of
+the object, like how it moves, looks, and interacts with other objects.
+
+In KAPLAY, there are many built-in components that you can use to create your
+game objects. For example:
+
+- `pos(x, y)` sets the position of the object.
+- `rect(width, height)` draws a rectangle.
+- `color(r, g, b)` sets the color of the object.
+
+We will go in deep on components in the [**Components**](/guides/components)
+guide.
+
+## Scenes
+
+Scenes are what wrap the game objects -- the acts of the stageplay. Typical
+scenes might include a main menu, the game itself, and a game over screen.
+
+In KAPLAY, you create scenes with the `scene()` function:
+
+```js
+kaplay(); // remember to initialize the game
+
+scene("game", () => {
+    const rect = add([
+        // a component
+        rect(32, 32),
+    ]);
+});
+```
+
+## Events
+
+Events are specific moments of your game execution that you can handle and
+execute code when that happens.
+
+```js
+onUpdate(() => {
+    // this code is executed every frame (normally 60 times per second)
+});
+
+onKeyPress("space", () => {
+    // this code is executed only when the space key is pressed
+});
+```
+
+We go in deep with events on the [**Events guide**](/guides/events) guide.
+
+### Components
+
+A component is a piece of code that defines a specific behavior of a game
+object. It returns a set of **properties** and **methods** that are attached to
+the game object.
+
+## Using a component
+
+For use components we have to attach them in the `add()` function.
+
+```js
+const player = add([
+    // rect(width, height) comp draws a rectangle in the obj
+    rect(40, 60),
+    // pos(x, y) comp sets the obj position
+    pos(10, 10),
+]);
+
+// method given by pos() comp
+player.move(100, 0); // moves the player 100px to the right
+// property given by rect() comp
+debug.log(player.height); // will log 60
+```
+
+There are a lot of useful components in KAPLAY like:
+
+- [`sprite()`](/doc/ctx/sprite) to make the object draw an image, and play
+  animations
+- [`area()`](/doc/ctx/area) to make the object do collision detection, with
+  methods like [`onCollide()`](/doc/AreaComp#AreaComp-onCollide)
+- [`text()`](/doc/ctx/text) to make the object draw text
+- [`scale()`](/doc/ctx/scale) to make the game object bigger or smaller or to
+  stretch it
+
+You can see all the components in the [API Reference](/doc/ctx/pos).
+
+## Components operations
+
+All components have an _id_, this is the **name** of the component, `sprite()`'s
+id is `"sprite"`. This is used in many operations.
+
+### How to add components
+
+```js
+loadSprite("bean", "sprites/bean.png");
+
+// Add the component on creation
+const bean = add([
+    sprite("bean"), // bean the frog :D
+    opacity(0.6), // a ghost bean???
+]);
+
+// Add the component after creation
+bean.use(color("#ff00ff")); // green bean <:
+```
+
+### How to remove components
+
+```js
+// We pass the component id for remove it.
+bean.unuse("sprite"); // bye bean
+```
+
+### How to know if a game object have a component
+
+```js
+// We pass the component id:
+bean.has("sprite"); // false - true if comp is there, otherwise false
+```
+
+> Important! Do note that you can't pass the component itself to `.unuse()` / `.has()`,
+> you have to pass the component _name_!
+
+## Making your own components
+
+If you are creating a larger game, it's probably a good idea to bundle some of
+your game's functionality into custom components. You can check out how to do
+that in [this guide](/guides/custom_components/).
+
+### Scenes
+
+Scenes are the way to organize your game. They are like the chapters of a book,
+each scene is a different part of your game.
+
+## Creating Scenes
+
+To create a scene, we use the `scene()` function. This function receives a name
+and a callback function. The callback function is executed when the scene is
+activated.
+
+```js
+scene("game", () => {
+    // your game code here
+});
+```
+
+## Changing Scenes
+
+When you want to change the current scene, you use the `go()` function. This
+function receives the name of the scene you want to go.
+
+```js
+go("game");
+```
+
+## Passing Data Between Scenes
+
+Passing data between scenes is quite easy, `go()` and `scene()` functions have
+parameters to pass data.
+
+We can handle the score in the `game` scene:
+
+```js
+scene("game", (score) => {
+    add([text(score), pos(12, 12)]);
+});
+```
+
+Now we need to pass the score to the `game` scene, we do it with the `go()`
+function:
+
+```js
+go("game", 100);
+```
+
+### Passing multiple parameters
+
+If you have many parameters to pass, you can use an object to pass them:
+
+```js
+scene("game", ({ score, level }) => {
+    add([text(`Score: ${score}`), pos(12, 12)]);
+
+    add([text(`Level: ${level}`), pos(12, 24)]);
+});
+```
+
+And pass the object to the `go()` function:
+
+```js
+go("game", { score: 100, level: 1 });
+```
+
+## Why can I use KAPLAY outside scenes?
+
+You can use KAPLAY outside scenes, this have some advantages and disadvantages.
+
+- **Advantage**: You can create simple games/examples without worrying about
+  scenes.
+- **Disadvantage**: If you add scenes later, your code outside scenes can't be
+  run again. You can't do a `go()` without scenes.
+
+```js
+k.add([sprite("mark")]);
+
+k.scene("bean", () => {
+    k.add([sprite("bean")]);
+});
+
+// after this go, you can't return to mark :(
+k.go("bean");
+```
+
+Fix it by putting your code inside a scene:
+
+```js
+k.scene("mark", () => {
+    k.add([sprite("mark")]);
+});
+
+k.scene("bean", () => {
+    k.add([sprite("bean")]);
+});
+
+k.go("bean"); // we can do go("mark") later! :D
+```
+
+### Rendering sprites
+
+The sprites are probably most of your visual aspects of your game.
+
+## Loading Sprites
+
+For load a sprite, you can use the `loadSprite()` function. This function mainly
+takes two parameters, the sprite name and the sprite path.
+
+```js
+loadSprite("bean", "sprites/bean.png");
+```
+
+This will load the sprite `bean` from the `sprites/bean.png` file.
+
+### Spritesheets
+
+When you have a spritesheet, you probably have animations. For these cases, the
+best option for you is to use the `loadSprite()`'s third argument, where you can
+set options related to animations.
+
+```js
+loadSprite("player", "sprites/player.png", {
+    sliceX: 2, // how many sprites are in the X axis
+    sliceY: 2, // how many sprites are in the Y axis
+    anims: {
+        crack: { from: 0, to: 3, loop: false },
+        ghosty: { from: 4, to: 4 },
+    },
+});
+```
+
+This will load the spritesheet, and create two animations, `crack` and `ghosty`.
+
+## Using sprites
+
+To use a sprite in a Game Object, you must use the `sprite()` component.
+
+```js
+kaplay();
+loadSprite("bean", "sprites/bean.png");
+
+const bean = k.add([sprite("bean"), pos(100, 100)]);
+```
+
+And your bean will be here!
+
+You can also set different parameters
+
+```js
+const bean = k.add([
+    sprite("bean", {
+        frame: 1, // the frame of the sprite
+        flipX: true, // flip the sprite in the X axis
+        flipY: true, // flip the sprite in the Y axis
+        anim: "crack", // the animation to play at the start
+    }),
+    pos(100, 100),
+]);
+```
+
+## Playing animations
+
+To play an animation, you can use the `SpriteComp.play()` method.
+
+```js
+const player = k.add([sprite("player"), pos(100, 100)]);
+
+player.play("crack");
+```
+
+### Tags
+
+Tags are names, labels or keywords that group game objects, such as enemies,
+friends, trees, etc. They are useful for classifying different types of objects.
+
+## Using tags
+
+Tags can be added on the `add([])` function array as a string.
+
+```js
+const ghost = add([
+    sprite("ghosty"),
+    "enemy",
+]);
+```
+
+This make ghosty to have a tag enemy, and there's much operations you can do
+with it.
+
+## Tags operations
+
+### How to add a tag
+
+```js
+// Add a tag on creation
+const ghosty = add([
+    sprite("ghosty"),
+    "enemy";
+]);
+
+// Add 1 tag or many tags!
+ghosty.tag("friend"); // now is a friend :D
+ghosty.tag(["friend", "invisible"]); // invisible forever
+```
+
+### How to remove a tag
+
+```js
+ghosty.untag("friend"); // D:
+```
+
+### How to know if a tag exists in a game object
+
+```js
+ghosty.is("enemy"); // true if tag is there, otherwise false
+```
+
+### How to get a list of all tags
+
+```js
+ghosty.tags; // readonly array with all tags.
+// result: ["enemy"]
+```
+
+> Important! Don't try to push or modify this array. Is only for read purposes. If you want to add or remove a tag, use `.tag()` and `.untag()` instead.
+
+## Using tags in events and methods
+
+A big quantity of methods and functions works using tags.
+
+```js
+obj.get("enemy"); // returns an array with all enemy game objects
+```
+
+## Special tag: *
+
+All game objects have the `*` tag by default. This can be useful for example to
+get all game objects
+
+```js
+get("*"); // list of all game objects
+```
+
+## Components as tags
+
+In v3001, KAPLAY by default will take component id's as tags:
+
+```js
+// this means if your object have a sprite() component, it also have a "sprite" tag
+const tga = add([
+    sprite("tga"),
+]);
+
+tga.is("sprite"); // true
+```
+
+In next versions this is disabled by default, but if you want to enable it or
+disable it in v3001 version, you can use the `tagsAsComponents` option:
+
+```js
+kaplay({
+    tagsAsComponents: false,
+});
+
+tga.is("sprite"); // false
+```
+
+### Video
+
+A video can be played using the video component. This can be used for intros, or cut-scenes for example.
+
+## The video component
+
+```ts
+const intro = add([
+  pos(200, 100), // Where to place the video
+  video("intro.mp4"),
+]);
+
+intro.play();
+```
+
+## Play, pause, rewind
+
+The video doesn't automatically start playing, for that `start()` needs to be called. To pause the video there is `pause()`. If you want stop functionality, you can call `pause()` and set `currentTime` to 0.
+
+## Play position
+
+The play position, aka `currentTime`, can be get and set. The relative position can be computed by dividing by `duration`. 
+
+### Playing sounds
+
+In KAPLAY, you can easily add background music and sound effects to your game.
+You can play music, audios and sounds using the `play()` function.
+
+## Loading sounds
+
+For load audio files, you can use the `loadSound()` function. This function
+takes two parameters, the sound name and the sound path.
+
+```js
+kaplay();
+
+loadSound("soundName", "/path/to/sound.mp3");
+```
+
+## Playing sounds
+
+You can play sounds using the [`play()`](. The `play()` function takes the name
+of the sound, and some options proper of [AudioPlayOpt](/doc/AudioPlayOpt/)
+interface.
+
+```js
+play("soundName", {
+    volume: 0.5, // set the volume to 50%
+    speed: 1.5, // speed up the sound
+    loop: true, // loop the sound
+});
+```
+
+## Stopping sounds
+
+All `play()` returns an [AudioPlay](/doc/AudioPlay/) object that you can use to
+stop the sound.
+
+```js
+const sound = play("soundName");
+sound.stop();
+``` 
